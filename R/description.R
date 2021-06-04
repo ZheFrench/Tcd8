@@ -78,17 +78,18 @@ dataframe.final <- dataframe.final[!is.na(dataframe.final$Group), ]
 dataframe.final <- dataframe.final[!is.na(dataframe.final$Date.Biopsy), ]
 #dataframe.final <- dataframe.final[dataframe.final$Histo=="ADK", ]
 
-#dataframe.final <- dataframe.final[!is.na(dataframe.final$Date.Progression.or.Endpoint), ]
+dataframe.final <- dataframe.final[!is.na(dataframe.final$Date.Progression.or.Endpoint), ]
 dataframe.final$Date.Progression.or.Endpoint   <- mdy(dataframe.final$Date.Progression.or.Endpoint)
 
 dataframe.final
 
 X.months <- 18 
-###################################
-# Limit to 6month , 12 months etc
-###################################
-# OS
+
+#############################################
+# OS -     # Limit to 6month , 12 months etc
+#############################################
 if(FALSE){
+    
 dataframe.final$temp <-  dataframe.final$Date.First.Immunotherapy %m+% months(X.months) 
 
 dataframe.final[dataframe.final$Date.Death.Or.Last.Contact > dataframe.final$temp & dataframe.final$Death.binary == 1, ]$Death.binary <- 0
@@ -102,17 +103,16 @@ dataframe.final$Diff.days   <- interval(dataframe.final$Date.First.Immunotherapy
 dataframe.final$Diff.months <- interval(dataframe.final$Date.First.Immunotherapy , dataframe.final$Date.Death.Or.Last.Contact)  %>% as.numeric('months')
 dataframe.final$Diff.years  <- interval(dataframe.final$Date.First.Immunotherapy , dataframe.final$Date.Death.Or.Last.Contact) %>% as.numeric('years')
 
-###################################
-###################################
-###################################
-###################################
-# Limit to 6month , 12 months etc
-###################################
-if(FALSE){
-    # PFS
+#########################
+######## PFS  ##########
+########################
+
+if(TRUE){
+    #
     # Si date de progression est antérieure à la date d'immunothérapie ya un prob C44 / C90 -> la ou ya 2 dates l'une avt therapie et l'autre 13 pr le mois
     dataframe.final <- dataframe.final[dataframe.final$Date.Progression.or.Endpoint > dataframe.final$Date.First.Immunotherapy,]
-
+    # Limit to 6month , 12 months etc
+    ###################################
     if(FALSE){
     dataframe.final$temp <-  dataframe.final$Date.First.Immunotherapy %m+% months(X.months) 
 
@@ -128,6 +128,9 @@ if(FALSE){
 }
 
 dataframe.final
+dataframe.final$Group <- dataframe.final$Responder.2
+#dataframe.final <- mutate(dataframe.final,Group=ifelse(Responder.2=="Oui", 1,2))
+
 
 surv_object <- Surv(time = dataframe.final$Diff.days, event = dataframe.final$Death.binary)
 
@@ -188,17 +191,17 @@ dev.off()
 #00BFC4 -> bleu
 #F8766D -> rouge
 png(file=glue("{base.dir}/plots/Boxplot_Age.png"),width=400,height=500)
-ggplot(dataframe.final[!is.na(dataframe.final$Group),], aes(factor(Group),Age.First.Immunotherapy, fill=factor(Group))) + geom_boxplot() + 
+ggplot(dataframe.final[!is.na(dataframe.final$Group),], aes(factor(Group),Age.First.Immunotherapy, fill=factor(Group))) + 
 stat_compare_means(label="p.signif",method = "wilcox.test", paired = FALSE,label.x = 1.5) + geom_boxplot(outlier.shape=NA) + #label.x = 2.45
 labs(x = "",fill = "Group :",y = "")  + geom_jitter( position=position_jitter(0.2))+ 
 scale_fill_manual(values= c( "1"= "#00BFC4", "2"= "#F8766D"))+ theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum() 
 dev.off()
 
 png(file=glue("{base.dir}/plots/Boxplot_TIS_Score.png"),width=400,height=500)
-ggplot(dataframe.final[!is.na(dataframe.final$Group),], aes(factor(Group),TIS_Score, fill=factor(Group))) + geom_boxplot() + 
+ggplot(dataframe.final[!is.na(dataframe.final$Group),], aes(factor(Group),TIS_Score, fill=factor(Group))) +
 stat_compare_means(label="p.signif",method = "wilcox.test", paired = FALSE,label.x = 1.5) + geom_boxplot(outlier.shape=NA) + #label.x = 2.45
 labs(x = "",fill = "Group :",y = "")  + geom_jitter( position=position_jitter(0.2))+ 
-scale_fill_manual(values= c( "1"= "#00BFC4", "2"= "#F8766D"))+ theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum() 
+scale_fill_manual(values= c( "Oui"= "#00BFC4", "Non"= "#F8766D"))+ theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum() 
 dev.off()
 
 png(file=glue("{base.dir}/plots/Boxplot_Nb.Pa.png"),width=400,height=500)
