@@ -92,7 +92,7 @@ scale_fill_manual(values= c( "low"= "#00BFC4", "high"= "#F8766D"))+ theme(legend
 dev.off()
 
 print ("Let's dot it")
-
+processed.dirname <- dirname(opt$annotation)
 
 test <- dataframe.nanostring.transposed.annotated %>% select(-Patient) %>% tbl_summary(by = group) %>% add_p()
 
@@ -113,7 +113,7 @@ rownames(dataframe.nanostring.final) <- dataframe.nanostring.final$Name
 # Write to file
 
 dataframe.nanostring.final <- dataframe.nanostring.final  %>% select(Name, everything()) 
-write.table(dataframe.nanostring.final,file = glue("{base.dir}/{filename}-all-diffsimple.tsv"),quote=F,row.names=F,sep="\t")
+write.table(dataframe.nanostring.final,file = glue("{processed.dirname}/{filename}-all-diffsimple.tsv"),quote=F,row.names=F,sep="\t")
 
 dataframe.nanostring.final.filtered.genes <- rownames(dataframe.nanostring.final[dataframe.nanostring.final$p.value < 0.05 ,])
 head(dataframe.nanostring.final.filtered.genes)
@@ -123,4 +123,4 @@ x <- subset(dataframe.nanostring,rownames(dataframe.nanostring) %in% dataframe.n
 x <- x  %>% select(Name, everything())  #%>% select(-p.value,-p.adjust)
 
 names(x)[1] <- ""
-write.table(x,file = glue("{base.dir}/{filename}-filtred-diffsimple.tsv"),quote=F,row.names=F,col.names=T,sep="\t")
+write.table(x,file = glue("{processed.dirname}/{filename}-filtred-diffsimple.tsv"),quote=F,row.names=F,col.names=T,sep="\t")
