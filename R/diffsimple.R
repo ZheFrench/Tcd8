@@ -32,30 +32,43 @@ suppressPackageStartupMessages(library(ggpubr))
 suppressPackageStartupMessages(library(hrbrthemes))
 suppressPackageStartupMessages(library(stats))
 
-#CodeClass,Name,Accession,Count
-#Endogenous,CCNO,NM_021147.4,20
+option_list = list(
+  make_option(c("-a", "--annotation"), type="character",  help="File with IDs and Annotations", metavar="PATH2ANNOTATION")
+)
+
+parser    = OptionParser(usage = "%prog [options] file ",option_list=option_list);
+arguments = parse_args(parser, positional_arguments = TRUE);
+opt  <- arguments$options
+args <- arguments$args
+
+print("> OPTS : ")
+print("> ARGS : ")
 
 base.dir <- "/data/villemin/data/Tcd8/"
-nanostring.file   <- "/data/villemin/data/Tcd8/NanoString.raw.tsv"
+nanostring.file   <- "/data/villemin/data/Tcd8/NanoString.normalised.tsv"
+filename<- basename(opt$annotation)
 
-dataframe.Annotation <- fread(glue("{base.dir}annotation.tsv"),data.table=F)
+dataframe.Annotation <- fread(opt$annotation,data.table=F)
 dataframe.nanostring <- fread(nanostring.file,data.table=F)
+head(dataframe.Annotation)
 
+# Trick to remove value of signal to make low and high group
+dataframe.Annotation <- dataframe.Annotation[1:(length(dataframe.Annotation)-1)]
 
 # Round value if needed
 dataframe.nanostring[,-1] <-round(dataframe.nanostring[,-1],0)
 
 
-genes                          <- dataframe.nanostring$Name
-dataframe.nanostring           <- dataframe.nanostring %>% select (c(-Name)) # %>% data.matrix( )
+genes                          <- dataframe.nanostring[,1]
+head(genes)
+dataframe.nanostring           <- dataframe.nanostring[,-1] # %>% data.matrix( )
 rownames(dataframe.nanostring) <- genes
 Ids <- unlist(colnames(dataframe.nanostring))
 
-
-# Transformation if needed
-y   <- DGEList(counts = dataframe.nanostring)
-cpm <- cpm(y$counts, log = FALSE)
-dataframe.nanostring <- as.data.frame(cpm)
+# Transformation if needed in CPM
+#y   <- DGEList(counts = dataframe.nanostring)
+#cpm <- cpm(y$counts, log = FALSE)
+#dataframe.nanostring <- as.data.frame(cpm)
 
 # Loose rownames in transposition
 dataframe.nanostring.transposed <- transpose(dataframe.nanostring)
@@ -63,42 +76,51 @@ dataframe.nanostring.transposed <- transpose(dataframe.nanostring)
 # transpose all but the first column (name)
 colnames(dataframe.nanostring.transposed) <- rownames(dataframe.nanostring)
 rownames(dataframe.nanostring.transposed) <- Ids
-dataframe.nanostring.transposed$Id        <- Ids
+dataframe.nanostring.transposed$Patient    <- Ids
 
-dataframe.nanostring.transposed.annotated <- inner_join(x = dataframe.nanostring.transposed, y = dataframe.Annotation  , by = "Id")
+dataframe.nanostring.transposed.annotated <- inner_join(x = dataframe.nanostring.transposed, y = dataframe.Annotation  , by = "Patient")
+# From here you get Patient Group ang genes names as column
+
 gene="ITGA6"
+
+# Plot gene value for low and high
 png(file=glue("{base.dir}/plots/Boxplot_{gene}.png"),width=400,height=500)
-ggplot(dataframe.nanostring.transposed.annotated, aes(factor(Group),get(gene), fill=factor(Group) )) + geom_boxplot(outlier.shape=NA) +
+ggplot(dataframe.nanostring.transposed.annotated, aes(factor(group),get(gene), fill=factor(group) )) + geom_boxplot(outlier.shape=NA) +
 stat_compare_means(label="p.signif",method = "wilcox.test", paired = FALSE,label.x = 1.5) + #label.x = 2.45
 labs(x = "",fill = "Group :",y = "")  + geom_jitter( position=position_jitter(0.2))+ 
-scale_fill_manual(values= c( "1"= "#00BFC4", "2"= "#F8766D"))+ theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum() 
+scale_fill_manual(values= c( "low"= "#00BFC4", "high"= "#F8766D"))+ theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum() 
 dev.off()
 
 print ("Let's dot it")
 
 
-test <- dataframe.nanostring.transposed.annotated %>% select(-Id) %>% tbl_summary(by = Group) %>% add_p()
+test <- dataframe.nanostring.transposed.annotated %>% select(-Patient) %>% tbl_summary(by = group) %>% add_p()
 
 nanostring.tested <- data.frame (Name  = test$table_body$variable,p.value = test$table_body$p.value) 
-
+nanostring.tested <- nanostring.tested[!is.na(nanostring.tested$p.value),] 
+dim(nanostring.tested)
 
 nanostring.tested$p.adjust <- p.adjust(nanostring.tested$p.value, method = "BH", n = length(nanostring.tested$p.value))
+dim(nanostring.tested) #770 3
+dim(dataframe.nanostring) #770 35
 
 # Remerged...and filter by p-value
 dataframe.nanostring$Name <- rownames(dataframe.nanostring)
-dataframe.nanostring.final<- left_join(x = dataframe.nanostring, y = nanostring.tested  , by = "Name")
 
-rownames(dataframe.nanostring.final) <- dataframe.nanostring$Name 
-
-dataframe.nanostring.final <- dataframe.nanostring.final %>% select(-Name)
-
+dataframe.nanostring.final<- inner_join(x = nanostring.tested  , y = dataframe.nanostring  , by = "Name")
+dim(dataframe.nanostring.final) #779 35
+rownames(dataframe.nanostring.final) <- dataframe.nanostring.final$Name
 # Write to file
-write.table(dataframe.nanostring.final,file = glue("{base.dir}/all-diffsimple.tsv"),quote=F,row.names=T,sep="\t")
 
-dataframe.nanostring.final.filtered.genes <- rownames(dataframe.nanostring.final[!is.na(dataframe.nanostring.final$p.value) & dataframe.nanostring.final$p.adjust < 0.05 ,])
+dataframe.nanostring.final <- dataframe.nanostring.final  %>% select(Name, everything()) 
+write.table(dataframe.nanostring.final,file = glue("{base.dir}/{filename}-all-diffsimple.tsv"),quote=F,row.names=F,sep="\t")
 
+dataframe.nanostring.final.filtered.genes <- rownames(dataframe.nanostring.final[dataframe.nanostring.final$p.value < 0.05 ,])
 head(dataframe.nanostring.final.filtered.genes)
 
-x <- subset(dataframe.nanostring, rownames(dataframe.nanostring) %in% dataframe.nanostring.final.filtered.genes)
+x <- subset(dataframe.nanostring,rownames(dataframe.nanostring) %in% dataframe.nanostring.final.filtered.genes)
 
-write.table(x,file = glue("{base.dir}/filtred-diffsimple.tsv"),quote=F,row.names=T,col.names=T,sep="\t")
+x <- x  %>% select(Name, everything())  #%>% select(-p.value,-p.adjust)
+
+names(x)[1] <- ""
+write.table(x,file = glue("{base.dir}/{filename}-filtred-diffsimple.tsv"),quote=F,row.names=F,col.names=T,sep="\t")
