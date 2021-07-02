@@ -17,7 +17,9 @@ base.dir <- "/data/villemin/data/Tcd8/"
 
 option_list = list(
   make_option(c("-a", "--annotation"), type="character",  help="File with IDs and Annotations", metavar="PATH2ANNOTATION"),
-  make_option(c("-e", "--expression"), type="character",  default = glue("{base.dir}NanoString.normalised.tsv"),help="File with IDs and Annotations", metavar="PATH2ANNOTATION")
+  make_option(c("-e", "--expression"), type="character",  default = glue("{base.dir}NanoString.normalised.tsv"),help="File with IDs and Annotations", metavar="PATH2ANNOTATION"),
+      make_option(c("-n", "--name"), type="character", default="default",  help="Add name to file", metavar="ADDNAME")
+
 
 )
 
@@ -31,9 +33,6 @@ arguments = parse_args(parser, positional_arguments = TRUE);
 opt  <- arguments$options
 args <- arguments$args
 
-print("> OPTS : ")
-print("> ARGS : ")
-print(args)
 
 print(opt$expression)
 dataframe.clinical <-fread(glue("{base.dir}clinicData.tsv"),data.table = F)
@@ -80,7 +79,8 @@ dim(dataframe.nanostring.annotated)
 # Change base.dir to be in same directory of file processessed
 processed.dirname <- dirname(opt$annotation)
 # don't forget you have 62 patients with clinical data, 32 expression...
-write.table(dataframe.nanostring.annotated,file = glue("{processed.dirname}/heatmap.{filname.annotation}.annotated.tsv"),quote=F,row.names=T,col.names=F,sep="\t")
+if (opt$name=="default"){
+write.table(dataframe.nanostring.annotated,file = glue("{processed.dirname}/heatmap.{filname.annotation}.filtred.annotated.tsv"),quote=F,row.names=T,col.names=F,sep="\t")
 
 png(file=glue("{processed.dirname}/{filname.annotation}.Boxplot_Age.png"),width=400,height=500)
 ggplot(dataframe.final[!is.na(dataframe.final$group),], aes(factor(group),Age.First.Immunotherapy, fill=factor(group))) + 
@@ -125,3 +125,8 @@ stat_compare_means(label="p.signif",method = "wilcox.test", paired = FALSE,label
 labs(x = "",fill = "Group :",y = "")  + geom_jitter( position=position_jitter(0.2))+ 
 scale_fill_manual(values= c( "low"= "#00BFC4", "high"= "#F8766D"))+ theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum() 
 dev.off()
+} else {
+    
+write.table(dataframe.nanostring.annotated,file = glue("{processed.dirname}/heatmap.{filname.annotation}.{opt$name}.annotated.tsv"),quote=F,row.names=T,col.names=F,sep="\t")
+
+}

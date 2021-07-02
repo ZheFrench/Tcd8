@@ -41,8 +41,7 @@ arguments = parse_args(parser, positional_arguments = TRUE);
 opt  <- arguments$options
 args <- arguments$args
 
-print("> OPTS : ")
-print("> ARGS : ")
+
 
 base.dir <- "/data/villemin/data/Tcd8/"
 nanostring.file   <- "/data/villemin/data/Tcd8/NanoString.normalised.tsv"
@@ -50,7 +49,7 @@ filename<- basename(opt$annotation)
 
 dataframe.Annotation <- fread(opt$annotation,data.table=F)
 dataframe.nanostring <- fread(nanostring.file,data.table=F)
-head(dataframe.Annotation)
+#head(dataframe.Annotation)
 
 # Trick to remove value of signal to make low and high group
 dataframe.Annotation <- dataframe.Annotation[1:(length(dataframe.Annotation)-1)]

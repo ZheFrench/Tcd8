@@ -39,7 +39,9 @@ suppressPackageStartupMessages(library(clusterProfiler))
 
 
 option_list = list(
-  make_option(c("-d", "--differential"), type="character",  help="File with IDs and Annotations", metavar="PATH2ANNOTATION")
+  make_option(c("-d", "--differential"), type="character",  help="File with IDs and Annotations", metavar="PATH2ANNOTATION"),
+  make_option(c("-a", "--annotation"), type="character",  help="Annotation to test", metavar="PATH2ANNOTATION")
+
 )
 
 parser    = OptionParser(usage = "%prog [options] file ",option_list=option_list);
@@ -47,18 +49,17 @@ arguments = parse_args(parser, positional_arguments = TRUE);
 opt  <- arguments$options
 args <- arguments$args
 
-print("> OPTS : ")
-print("> ARGS : ")
-print(args)
 
+dirname    <- dirname(opt$differential)
+filename   <- basename(opt$differential)
+annotation <- opt$annotation
 
-base.dir <- "/data/villemin/data/Tcd8/"
+base.dir <- dirname
 
-dir.create(glue("{base.dir}/plots"), showWarnings = F)
 dir.create(glue("{base.dir}/fgsea"), showWarnings = F)
 
 asbolutepath2file <- opt$differential
-annotation        <- "H"
+
 
 if (annotation == "C5"){file.gmt <- "/data/villemin/annotation/gsea/MSigDB/c5.go.v7.2.symbols.gmt" }
 if (annotation == "C2"){file.gmt <- "/data/villemin/annotation/gsea/MSigDB/c2.all.v7.2.symbols.gmt" }
@@ -75,12 +76,10 @@ print(base)
 h.All <- gmtPathways(file.gmt) # 6226
 h.All.bis <- read.gmt(file.gmt)
 
-final.file.padj <- glue("{base.dir}fgsea/{annotation}-fgsea.padj.txt")
-final.file.nes  <- glue("{base.dir}fgsea/{annotation}-fgsea.nes.txt")
+final.file.padj <- glue("{base.dir}/fgsea/{filename}-{annotation}-fgsea.padj.txt")
+final.file.nes  <- glue("{base.dir}/fgsea/{filename}-{annotation}-fgsea.nes.txt")
 
-  
 dataframe.expression <- fread(asbolutepath2file,data.table=F)
-head(dataframe.expression)
 dataframe.expression <- subset(dataframe.expression,select=c(genes,logFC))
 
 dataframe.expression <- dataframe.expression[order(dataframe.expression$logFC),]
@@ -96,7 +95,7 @@ ranks <- deframe(dataframe.expression)
 egmt2 <- GSEA(ranks_decreasing, TERM2GENE = h.All.bis, by = "fgsea",verbose=TRUE ,nPermSimple = 10000 ,minGSSize  = 10, maxGSSize  = 325 , eps = 0,  pvalueCutoff = 1)
 
 # You dont need the whole object to be written
-write.table(egmt2, file=glue("{base.dir}fgsea/{annotation}-full-gsea-clusterprofiler.tsv"),quote=F,row.names=F,sep="\t")
+write.table(egmt2, file=glue("{base.dir}/fgsea/{filename}-{annotation}-full-gsea-clusterprofiler.tsv"),quote=F,row.names=F,sep="\t")
 
 # Yeah I do it again (I know.Don't say a fucking word moron.)
 fgseaRes     <- fgseaMultilevel(pathways=h.All, stats=ranks,eps=0, nPermSimple = 10000 ,minSize  = 10, maxSize  = 325)
@@ -107,7 +106,7 @@ for (pathway in names(h.All)){
       #print(h.All[[pathway]])
       p<- plotEnrichment(h.All[[pathway]], ranks) + labs(title=pathway)
 
-      png(file=glue("{base.dir}fgsea/{annotation}-{pathway}.png"))
+      png(file=glue("{base.dir}/fgsea/{filename}-{annotation}-{pathway}.png"))
       print(p)
       dev.off()
 
@@ -119,7 +118,7 @@ for (pathway in names(h.All)){
       #print(h.All[[pathway]])
       p<- plotEnrichment(h.All[[pathway]], ranks) + labs(title=pathway)
 
-      png(file=glue("{base.dir}fgsea/{annotation}-{pathway}.png"))
+      png(file=glue("{base.dir}/fgsea/{filename}-{annotation}-{pathway}.png"))
       print(p)
       dev.off()
 
@@ -129,7 +128,7 @@ for (pathway in names(h.All)){
 
 fgseaResTidy <- fgseaRes %>% as_tibble()
 
-fwrite( filter(fgseaResTidy ,padj <= 1), file=glue("{base.dir}fgsea/{annotation}-full-fgsea.tsv"), sep="\t", sep2=c("", "/", ""))
+fwrite( filter(fgseaResTidy ,padj <= 1), file=glue("{base.dir}/fgsea/{filename}-{annotation}-full-fgsea.tsv"), sep="\t", sep2=c("", "/", ""))
 
 topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=10), pathway]
 
@@ -138,11 +137,10 @@ topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=10), pathway]
 
 topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
 
-png(file=glue("{base.dir}fgsea/{annotation}-top-global.png"),width=900)
+png(file=glue("{base.dir}/fgsea/{filename}-{annotation}-top-global.png"),width=900)
 plotGseaTable(h.All[topPathways], ranks, fgseaRes, gseaParam=0.5) 
 dev.off()
 
-fgseaResTidy
 
 dataset.padj <-  fgseaResTidy %>% select(-leadingEdge, -pval,-log2err,-size, -ES,-NES) # %>% rename( !!file := padj)
 dataset.nes  <-  fgseaResTidy %>% select(-leadingEdge, -pval,-log2err,-size, -ES,-padj) #%>% rename(!!file :=  NES)

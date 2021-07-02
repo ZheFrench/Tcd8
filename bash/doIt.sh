@@ -39,15 +39,15 @@ VAR=CD8Plus_CD49aPlus_CD103Plus_TCF1Moins.Tumeur.Trm
 echo ${VAR}_annotation.csv
 echo ''
 #=>>>>>>>>>>>>>>>>>>>>>>>>
-echo "Add clinical data & expression for group of patients define for survival analysis"
+echo "1. Add clinical data & expression for group of patients define for survival analysis"
 Rscript /data/villemin/code/Tcd8/R/joinAnnotation.R -a /data/villemin/data/Tcd8/plots/survival/DENSITY/tertile_OS/${VAR}_annotation.csv
 # This create /data/villemin/data/Tcd8/plots/survival/DENSITY/tertile_OS/heatmap.CD8Plus_CD49aPlus_CD103Plus_TCF1Moins.Tumeur.Trm_annotation.csv.annotated.tsv
 
 Rscript /data/villemin/code/Tcd8/R/joinAnnotation.R -a /data/villemin/data/Tcd8/plots/survival/DENSITY/median_OS/${VAR}_annotation.csv
 #/data/villemin/data/Tcd8/plots/survival/DENSITY/median_OS/heatmap.CD8Plus_CD49aPlus_CD103Plus_TCF1Moins.Tumeur.Trm_annotation.csv.annotated.tsv
-exit 0
+
 #=>>>>>>>>>>>>>>>>>>>>>>>>
-echo "Wilcoxon of normalised gene expression values between groups"
+echo "2. Wilcoxon of normalised gene expression values between groups"
 Rscript /data/villemin/code/Tcd8/R/diffsimple.R -a /data/villemin/data/Tcd8/plots/survival/DENSITY/median_OS/${VAR}_annotation.csv
 # This create /data/villemin/data/Tcd8/heatmap.CD8Plus_CD49aPlus_CD103Plus_TCF1Moins.Tumeur.Trm_annotation.csv.annotated.tsv
 
@@ -55,25 +55,25 @@ Rscript /data/villemin/code/Tcd8/R/diffsimple.R -a /data/villemin/data/Tcd8/plot
 #CD8Plus_CD49aPlus_CD103Moins.Total.Trm_annotation.csv-filtred-diffsimple.tsv
 
 #=>>>>>>>>>>>>>>>>>>>>>>>>
-echo "Re-Add annotation on filtered subset of data"
+echo "3. Re-Add annotation on filtered subset of data"
 # Add Annotation to filtered stuffs
-Rscript /data/villemin/code/Tcd8/R/joinAnnotation.R -a /data/villemin/data/Tcd8/plots/survival/DENSITY/median_OS/${VAR}_annotation.csv -e   /data/villemin/data/Tcd8/plots/survival/DENSITY/median_OS/${VAR}_annotation.csv-filtred-diffsimple.tsv
+Rscript /data/villemin/code/Tcd8/R/joinAnnotation.R -a /data/villemin/data/Tcd8/plots/survival/DENSITY/median_OS/${VAR}_annotation.csv -e   /data/villemin/data/Tcd8/plots/survival/DENSITY/median_OS/${VAR}_annotation.csv-filtred-diffsimple.tsv -n filtered
 
-Rscript /data/villemin/code/Tcd8/R/joinAnnotation.R -a /data/villemin/data/Tcd8/plots/survival/DENSITY/tertile_OS/${VAR}_annotation.csv -e   /data/villemin/data/Tcd8/plots/survival/DENSITY/tertile_OS/${VAR}_annotation.csv-filtred-diffsimple.tsv
+Rscript /data/villemin/code/Tcd8/R/joinAnnotation.R -a /data/villemin/data/Tcd8/plots/survival/DENSITY/tertile_OS/${VAR}_annotation.csv -e   /data/villemin/data/Tcd8/plots/survival/DENSITY/tertile_OS/${VAR}_annotation.csv-filtred-diffsimple.tsv  -n filtered
 
 #=>>>>>>>>>>>>>>>>>>>>>>>>
-echo "Differential on raw data using EdgeR"
+echo "4. Differential on raw data using EdgeR"
 # Do differential expression based on raw data
 Rscript /data/villemin/code/Tcd8/R/diffDE.R -a /data/villemin/data/Tcd8/plots/survival/DENSITY/median_OS/${VAR}_annotation.csv
 
 Rscript /data/villemin/code/Tcd8/R/diffDE.R -a /data/villemin/data/Tcd8/plots/survival/DENSITY/tertile_OS/${VAR}_annotation.csv
 
 #=>>>>>>>>>>>>>>>>>>>>>>>>
-echo "GSEA"
+echo "5. GSEA"
 # Gsea on previous output
-Rscript /data/villemin/code/Tcd8/R/gsea.R -d /data/villemin/data/Tcd8/plots/survival/DENSITY/median_OS/DE/${VAR}annotation.csv_high_low-differential.tsv
+Rscript /data/villemin/code/Tcd8/R/gsea.R -d /data/villemin/data/Tcd8/plots/survival/DENSITY/median_OS/DE/${VAR}_annotation.csv_high_low-differential.tsv -a H
 
-Rscript /data/villemin/code/Tcd8/R/gsea.R -d /data/villemin/data/Tcd8/plots/survival/DENSITY/tertile_OS/DE/${VAR}annotation.csv_high_low-differential.tsv
+Rscript /data/villemin/code/Tcd8/R/gsea.R -d /data/villemin/data/Tcd8/plots/survival/DENSITY/tertile_OS/DE/${VAR}_annotation.csv_high_low-differential.tsv -a H
 
 #############################
 #End
