@@ -45,6 +45,10 @@ args <- arguments$args
 
 base.dir <- "/data/villemin/data/Tcd8/"
 nanostring.file   <- "/data/villemin/data/Tcd8/NanoString.normalised.tsv"
+#nanostring.file   <- "/data/villemin/data/Tcd8/NanoString.normalised.wtoutliers.tsv"
+#nanostring.file   <- "/data/villemin/data/Tcd8/NanoString.raw.32.tsv"
+
+
 filename<- basename(opt$annotation)
 
 dataframe.Annotation <- fread(opt$annotation,data.table=F)

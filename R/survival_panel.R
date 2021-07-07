@@ -46,7 +46,7 @@ suppressPackageStartupMessages(library(gt))
 # http://rstudio-pubs-static.s3.amazonaws.com/250023_a4a1795bc6db4421ad178bd8520b1197.html
 # https://www.themillerlab.io/post/survival_analysis/
 # https://github.com/LucoLab/Survival/blob/main/SurvivalV4.R
-base.dir <- "/data/villemin/data/Tcd8/"
+base.dir <- "/data/villemin/data/Tcd8/plots/survival/DENSITY/"
 
 option_list = list(
   make_option(c("-f", "--file"), type="character",  help="Path to annotated file", metavar="PATH2MATRIX"),
@@ -55,6 +55,7 @@ option_list = list(
   make_option(c("-c", "--cutoff"), type="character",  help="Median or Tertile", metavar="CUTOFF")
 
 )
+base.dir.bis <- "/data/villemin/data/Tcd8/"
 
 # clinicData.tsv  
 # NanoString.normalised.tsv
@@ -70,12 +71,12 @@ print("===> SURVIVAL SCRIPT: ")
 
 print("> OPTS : ")
 print(opt)
-
+#base.dir <- dirname(opt$file)
 
 dataframe.Annotation <- fread(opt$file,data.table=F)
 variable <- opt$variable
-dataframe.clinical   <- fread(glue("{base.dir}clinicData.tsv"),data.table=F)
-dataframe.tis.score  <- fread(glue("{base.dir}TIS.Score.tsv"),data.table=F)
+dataframe.clinical   <- fread(glue("{base.dir.bis}clinicData.tsv"),data.table=F)
+dataframe.tis.score  <- fread(glue("{base.dir.bis}TIS.Score.tsv"),data.table=F)
 
 dim(dataframe.Annotation)
 dataframe.clinical.selected <- dataframe.clinical %>% select(Sexe,Histo,Best.Response,Tabaco,Nb.Pa)
@@ -194,14 +195,14 @@ mypalette = c("#F8766D" , "#00BFC4" ) # high -> red alphabetic orders
 #values= c( "high"= "#00BFC4", "low"= "#F8766D")
 # "high"= "#00BFC4", "low"= "#F8766D"
 # Année diagnostic ??
-file      = glue("{base.dir}/plots/survival/{opt$cutoff}_{opt$analysis}/{variable}_Surv.png")
+file      = glue("{base.dir}/{opt$cutoff}_{opt$analysis}/{variable}_{opt$cutoff}_{opt$analysis}_Surv.png")
 table(dataframe.final$Group)
 # use ggpar to change the font of one or a list of ggplots at once
 group1 <- sprintf(glue("Group High (n=%s)"), table(dataframe.final$Group)[1])
 group2 <- sprintf(glue("Group Low (n=%s)"), table(dataframe.final$Group)[2])
 
 table(dataframe.final$Group)
-    write.table(dataframe.final,file = glue("/data/villemin/data/Tcd8/plots/survival/{opt$cutoff}_{opt$analysis}/{variable}_survival.csv"), row.names =  FALSE, quote = F,sep = "\t")
+    write.table(dataframe.final,file = glue("{base.dir}/{opt$cutoff}_{opt$analysis}/{variable}_survival.csv"), row.names =  FALSE, quote = F,sep = "\t")
 
 dataframe.final$Group
 
@@ -231,43 +232,37 @@ dev.off()
 
 
 
-png(file=glue("{base.dir}/plots/survival/{opt$cutoff}_{opt$analysis}/{variable}_Boxplot_Age.png"),width=400,height=500)
+png(file=glue("{base.dir}/{opt$cutoff}_{opt$analysis}/{variable}_{opt$cutoff}_{opt$analysis}_Boxplot_Age.png"),width=400,height=500)
 ggplot(dataframe.final[!is.na(dataframe.final$Group),], aes(factor(Group),Age.First.Immunotherapy, fill=factor(Group))) + 
 stat_compare_means(label="p.signif",method = "wilcox.test", paired = FALSE,label.x = 1.5) + geom_boxplot(outlier.shape=NA) + #label.x = 2.45
 labs(x = "",fill = "Group :",y = "")  + geom_jitter( position=position_jitter(0.2))+ 
 scale_fill_manual(values= c("high"= "#F8766D", "low"= "#00BFC4"))+ theme(legend.position="right",axis.text.y = element_text(size=14)) + theme_ipsum() 
 dev.off()
 
-#png(file=glue("{base.dir}/plots/survival/{variable}_Boxplot_TIS_Score.png"),width=400,height=500)
-#ggplot(dataframe.final[!is.na(dataframe.final$Group),], aes(factor(Group),TIS_Score, fill=factor(Group))) +
-#stat_compare_means(label="p.signif",method = "wilcox.test", paired = FALSE,label.x = 1.5) + geom_boxplot(outlier.shape=NA) + #label.x = 2.45
-#labs(x = "",fill = "Group :",y = "")  + geom_jitter( position=position_jitter(0.2))+ 
-#scale_fill_manual(values= c( "high"= "#00BFC4", "low"= "#F8766D"))+ theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum() 
-#dev.off()
 
-png(file=glue("{base.dir}/plots/survival/{opt$cutoff}_{opt$analysis}/Boxplot_Nb.Pa.png"),width=400,height=500)
+png(file=glue("{base.dir}/{opt$cutoff}_{opt$analysis}/{variable}_{opt$cutoff}_{opt$analysis}_Boxplot_Nb.Pa.png"),width=400,height=500)
 ggplot(dataframe.final[!is.na(dataframe.final$Group),], aes(factor(Group),Nb.Pa, fill=factor(Group))) + geom_boxplot() + 
 stat_compare_means(label="p.signif",method = "wilcox.test", paired = FALSE,label.x = 1.5) + geom_boxplot(outlier.shape=NA) + #label.x = 2.45
 labs(x = "",fill = "Group :",y = "")  + geom_jitter( position=position_jitter(0.2))+ 
 scale_fill_manual(values= c("high"= "#F8766D", "low"= "#00BFC4"))+ theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum() 
 dev.off()
 
-png(file=glue("{base.dir}/plots/survival/{opt$cutoff}_{opt$analysis}/Barplot_Histo.png"),width=400,height=500)
+png(file=glue("{base.dir}/{opt$cutoff}_{opt$analysis}/{variable}_{opt$cutoff}_{opt$analysis}_Barplot_Histo.png"),width=400,height=500)
 ggplot(dataframe.final[!is.na(dataframe.final$Group),] )+ geom_bar( aes( factor(Group),fill = factor(Histo)),color="black"   )   + 
 labs(x = "Group",fill = "Histo :",y = "") + theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum()  + scale_fill_brewer(palette="Blues")
 dev.off()
 
-png(file=glue("{base.dir}/plots/survival/{opt$cutoff}_{opt$analysis}/Barplot_Sexe.png"),width=400,height=500)
+png(file=glue("{base.dir}/{opt$cutoff}_{opt$analysis}/{variable}_{opt$cutoff}_{opt$analysis}_Barplot_Sexe.png"),width=400,height=500)
 ggplot(dataframe.final[!is.na(dataframe.final$Group),] )+ geom_bar( aes( factor(Group) ,fill = factor(Sexe)) ,color="black" )  + 
 labs(x = "Group",fill = "Sexe :",y = "") + theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum()  + scale_fill_brewer(palette="Blues")
 dev.off()
 
-png(file=glue("{base.dir}/plots/survival/{opt$cutoff}_{opt$analysis}/Barplot_Best.Response.png"),width=400,height=500)
+png(file=glue("{base.dir}/{opt$cutoff}_{opt$analysis}/{variable}_{opt$cutoff}_{opt$analysis}_Barplot_Best.Response.png"),width=400,height=500)
 ggplot(dataframe.final[!is.na(dataframe.final$Group),] )+ geom_bar( aes( factor(Group),fill = factor(Best.Response)) ,color="black")  + 
 labs(x = "Group",fill = "Best.Response :",y = "") + theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum()  + scale_fill_brewer(palette="Blues")
 dev.off()
 
-png(file=glue("{base.dir}/plots/survival/{opt$cutoff}_{opt$analysis}/Barplot_Tabaco.png"),width=400,height=500)
+png(file=glue("{base.dir}/{opt$cutoff}_{opt$analysis}/{variable}_{opt$cutoff}_{opt$analysis}_Barplot_Tabaco.png"),width=400,height=500)
 ggplot(dataframe.final[!is.na(dataframe.final$Group),] )+ geom_bar( aes( factor(Group),fill = factor(Tabaco)) ,color="black")  + 
 labs(x = "Group",fill = "Tabaco :",y = "") + theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum()  + scale_fill_brewer(palette="Blues")
 dev.off()
@@ -277,14 +272,22 @@ df <- data.frame(NAME=character(),PVAL=double(),HR=double(),PVALHR=double(),CILO
 
 df    <- rbind(df, data.frame(NAME = variable, PVAL = test$pval,HR=hr,PVALHR=pvc,CILOW=low_confidence,CIHIGH=high_confidence))
 
-if ( file.exists(glue("{base.dir}/plots/survival/{opt$cutoff}_{opt$analysis}/wholeSurv_{opt$cutoff}_{opt$analysis}.csv"))) {
-       write.table(df,file=glue("{base.dir}/plots/survival/{opt$cutoff}_{opt$analysis}/wholeSurv_{opt$cutoff}_{opt$analysis}.csv"),quote=FALSE,row.names=FALSE,col.names = TRUE, append = TRUE)
+if ( file.exists(glue("{base.dir}/{opt$cutoff}_{opt$analysis}/wholeSurv_{opt$cutoff}_{opt$analysis}.csv"))) {
+       write.table(df,file=glue("{base.dir}/{opt$cutoff}_{opt$analysis}/wholeSurv_{opt$cutoff}_{opt$analysis}.csv"),quote=FALSE,row.names=FALSE,col.names = TRUE, append = TRUE)
 } else {
     
-        write.table(df,file=glue("{base.dir}/plots/survival/{opt$cutoff}_{opt$analysis}/wholeSurv_{opt$cutoff}_{opt$analysis}.csv"),quote=FALSE,row.names=FALSE,col.names = FALSE, append = TRUE)
+        write.table(df,file=glue("{base.dir}/{opt$cutoff}_{opt$analysis}/wholeSurv_{opt$cutoff}_{opt$analysis}.csv"),quote=FALSE,row.names=FALSE,col.names = FALSE, append = TRUE)
     }
 
 
+dataframe.final <-  left_join(x = dataframe.final , y = dataframe.tis.score ,  by = "Id")
+#print(dataframe.final)
+png(file=glue("{base.dir}/{opt$cutoff}_{opt$analysis}/{variable}_{opt$cutoff}_{opt$analysis}_Boxplot_TIS_Score.png"),width=400,height=500)
+ggplot(dataframe.final[!is.na(dataframe.final$Group),], aes(factor(Group),TIS_Score, fill=factor(Group))) +
+stat_compare_means(label="p.signif",method = "wilcox.test", paired = FALSE,label.x = 1.5) + geom_boxplot(outlier.shape=NA) + #label.x = 2.45
+labs(x = "",fill = "Group :",y = "")  + geom_jitter( position=position_jitter(0.2))+ 
+scale_fill_manual(values= c( "high"= "#F8766D", "low"= "#00BFC4"))+ theme(legend.position="right"   ,axis.text.y = element_text(size=14)) + theme_ipsum() 
+dev.off()
 
 
 

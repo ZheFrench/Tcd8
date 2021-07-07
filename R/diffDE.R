@@ -61,6 +61,7 @@ args <- arguments$args
 print("> OPTS : ")
 print("> ARGS : ")
 print(args)
+set.seed(12)
 
 base.dir <- "/data/villemin/data/Tcd8/"
 
@@ -69,7 +70,10 @@ dir.create(glue("{base.dir}/DE"), showWarnings = F)
 
 dataframe.Annotation <- fread(opt$annotation,data.table = F)
 dataframe.tis.score  <- fread(glue("{base.dir}TIS.Score.tsv"),data.table = F)
-dataframe.nanostring <- fread(glue("{base.dir}NanoString.raw.32.tsv"),data.table = F)
+dataframe.nanostring <- fread(glue("{base.dir}NanoString.normalised.tsv"),data.table = F)
+#dataframe.nanostring <- fread(glue("{base.dir}NanoString.raw.32.tsv"),data.table = F)
+#dataframe.nanostring <- fread(glue("{base.dir}NanoString.normalised.wtoutliers.tsv"),data.table = F)
+
 head(dataframe.Annotation)
 
 colnames(dataframe.Annotation)[1]<-"Id"
@@ -98,49 +102,71 @@ rownames(matrix.nanostring) <- genes
 #good <- rowSums( apply(counts,1,function(x) x>= 5 ) ) >= 3
 #counts <- counts[good,]
 #print(glue("# Filtered Genes {length(rownames(counts))}"))
+
 dge <- DGEList(matrix.nanostring) #,genes=rownames(matrix.nanostring)
 
 print("DGE samples.")
-dge <- calcNormFactors(dge)
+
+
+#dge <- calcNormFactors(dge)
+
 dge$samples$Id <- rownames(dge$samples)
-         
 dim(dge$samples)#31 4 
 
 print ("Annotation")
 dim(dataframe.Annotation)#33 3
-#merge before
-grouping <- merge (x = dge$samples,y = dataframe.Annotation,by ="Id")
 
-dge$samples$group  <- grouping$group.y
+#atient group CD8Plus.Total.Ex
+#1     C43   low                0
+#2     C16   low                2
+#3     H85   low               23
+#4     C90  high              568
+#5     C04  high              608
+#6     H21  high              613
+dge$samples <- dge$samples %>% select (c(-group))
+dge$samples  <- inner_join (x = dge$samples ,y = dataframe.Annotation,by ="Id")
 
 dge$samples$group <-  glue("condition_{dge$samples$group}")
-dim(dge$samples)
-
 print(dge$samples)
+
 
 cond1 = "high"
 cond2 = "low"
 
+print(dge$samples )
 # names need to have specific format to go into model matrix meaning see help(names)
-dge$samples$group <- relevel(factor(dge$samples$group),ref = glue("condition_{cond2}"))
-print(dge$samples$group)
 
+# Aucun effet ici???
+dge$samples$group <- relevel(factor(dge$samples$group),ref = glue("condition_{cond2}"))
+# was each time comparing to high
 comp     <- glue("condition_{cond1}-condition_{cond2}")
 
 de.design <- model.matrix(~0 + dge$samples$group)
 
 colnames(de.design) <- gsub("^dge\\$samples\\$group","",colnames(de.design))
-
+print("de.design")
+#levels(de.design)
+print("dge$samples$group")
+#dge$samples$group
+#Levels: condition_low condition_high
+#                Contrasts
+#Levels           condition_high-condition_low
+#  condition_low                            -1
+#  condition_high                            1
+#Levels: condition_low condition_high
+#                Contrasts
+#Levels           condition_high-condition_low
+#  condition_low                            -1
+#  condition_high                            1
 cm     <- makeContrasts(contrasts = comp,levels = dge$samples$group)
-
+cm
 dge    <- estimateDisp(dge, de.design,robust=T)
 
 fit.y  <- glmFit(dge, de.design)
 lrt    <- glmLRT(fit.y,contrast = cm)
 
 de.design
-names(dge)
-names(lrt)
+
 #######################################################################################################
 ###################################      FILES          ###############################################
 #######################################################################################################
@@ -158,19 +184,19 @@ result     <- cbind(result,dge$counts[result$genes,])
 
 write.table(result,file = glue("{processed.dirname}/DE/{filename}_{cond1}_{cond2}-differential.tsv"),quote=F,row.names=F,sep="\t")
 
-result_up    <- subset(result, ( logFC >= 1 & FDR < 0.25 ))
+result_up    <- subset(result, ( logFC >= 1 & FDR < 0.05 ))
 result_up <- result_up[order(abs(result_up$logFC),decreasing = TRUE),]
 rownames(result_up)
 
 write.table(result_up,file = glue("{processed.dirname}/DE/{filename}_{cond1}_{cond2}-differential-up.tsv"),quote=F,row.names=F,sep="\t")
 
-result_down <- subset(result, ( logFC <= -1 & FDR < 0.25 ))
+result_down <- subset(result, ( logFC <= -1 & FDR < 0.05 ))
 result_down <- result_down[order(abs(result_down$logFC),decreasing = TRUE),]
 rownames(result_down)
 
 write.table(result_down,file = glue("{processed.dirname}/DE/{filename}_{cond1}_{cond2}-differential-down.tsv"),quote=F,row.names=F,sep="\t")
 
-summary <- as.data.frame(summary(dt<-decideTestsDGE(lrt, adjust.method="BH",p.value = 0.25,lfc = 1)))
+summary <- as.data.frame(summary(dt<-decideTestsDGE(lrt, adjust.method="BH",p.value = 0.05,lfc = 1)))
 colnames(summary)[1] <- "FC"
 colnames(summary)[2] <- "Analyse"
 write.table(summary ,file = glue("{processed.dirname}/DE/{filename}_{cond1}_{cond2}-summary.tsv"),quote=F,row.names=F,sep="\t")

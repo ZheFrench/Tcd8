@@ -60,6 +60,7 @@ dir.create(glue("{base.dir}/fgsea"), showWarnings = F)
 
 asbolutepath2file <- opt$differential
 
+set.seed(12)
 
 if (annotation == "C5"){file.gmt <- "/data/villemin/annotation/gsea/MSigDB/c5.go.v7.2.symbols.gmt" }
 if (annotation == "C2"){file.gmt <- "/data/villemin/annotation/gsea/MSigDB/c2.all.v7.2.symbols.gmt" }
@@ -102,6 +103,27 @@ fgseaRes     <- fgseaMultilevel(pathways=h.All, stats=ranks,eps=0, nPermSimple =
 
 for (pathway in names(h.All)){
     if (pathway %in% c("HALLMARK_INFLAMMATORY_RESPONSE" )){
+      #print(pathway)
+      #print(h.All[[pathway]])
+      p<- plotEnrichment(h.All[[pathway]], ranks) + labs(title=pathway)
+
+      png(file=glue("{base.dir}/fgsea/{filename}-{annotation}-{pathway}.png"))
+      print(p)
+      dev.off()
+
+    }  
+     if (pathway %in% c("HALLMARK_INTERFERON_GAMMA_RESPONSE" )){
+      #print(pathway)
+      #print(h.All[[pathway]])
+      p<- plotEnrichment(h.All[[pathway]], ranks) + labs(title=pathway)
+
+      png(file=glue("{base.dir}/fgsea/{filename}-{annotation}-{pathway}.png"))
+      print(p)
+      dev.off()
+
+    }  
+    
+      if (pathway %in% c("HALLMARK_INTERFERON_ALPHA_RESPONSE" )){
       #print(pathway)
       #print(h.All[[pathway]])
       p<- plotEnrichment(h.All[[pathway]], ranks) + labs(title=pathway)

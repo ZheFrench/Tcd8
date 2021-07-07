@@ -30,9 +30,25 @@ DIR=/data/villemin/data/Tcd8/raw_nanostring
 
 #Rscript /data/villemin/code/Tcd8/R/diver.R -a "OS" -c "tertile"
 #Rscript  /data/villemin/code/Tcd8/R/diver.R -a "PFS" -c "tertile"
+#SD.PR.CR_PD
+#PR.CR_PD.SD
+
+for dir in DENSITY;
+    do for analysis in PFS OS; 
+        do for cutoff in median tertile; 
+            do Rscript /data/villemin/code/Tcd8/R/survival_panel.R -f /data/villemin/data/Tcd8/plots/survival/${dir}/${cutoff}_${analysis}/TIS_${cutoff}_annotation.csv -v TIS_${cutoff} -a ${analysis}  -c ${cutoff};
+            done; 
+        done
+    done;
+
+exit 0
+#{cutoff} 
 
 #CD8Plus_TCF1Plus.Stroma.Trm
+VAR=kmeans
 VAR=CD8Plus_CD49aPlus_CD103Plus_TCF1Moins.Tumeur.Trm
+VAR=TIS_median
+
 ###################################################
 #Start
 ###################################################
@@ -42,7 +58,7 @@ echo ''
 echo "1. Add clinical data & expression for group of patients define for survival analysis"
 Rscript /data/villemin/code/Tcd8/R/joinAnnotation.R -a /data/villemin/data/Tcd8/plots/survival/DENSITY/tertile_OS/${VAR}_annotation.csv
 # This create /data/villemin/data/Tcd8/plots/survival/DENSITY/tertile_OS/heatmap.CD8Plus_CD49aPlus_CD103Plus_TCF1Moins.Tumeur.Trm_annotation.csv.annotated.tsv
-
+#
 Rscript /data/villemin/code/Tcd8/R/joinAnnotation.R -a /data/villemin/data/Tcd8/plots/survival/DENSITY/median_OS/${VAR}_annotation.csv
 #/data/villemin/data/Tcd8/plots/survival/DENSITY/median_OS/heatmap.CD8Plus_CD49aPlus_CD103Plus_TCF1Moins.Tumeur.Trm_annotation.csv.annotated.tsv
 
